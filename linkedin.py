@@ -134,7 +134,7 @@ class LinkedIn(object):
         self._verifier = None
         self._error    = None
 
-    def request_token(self):
+    def request_token(self, scope=None):
         """
         Performs the corresponding API which returns the request token in a query string
         The POST Querydict must include the following:
@@ -144,21 +144,31 @@ class LinkedIn(object):
          * oauth_signature_method
          * oauth_timestamp
          * oauth_version
+
+        @param list scope Pass in a list of scope params so permissions are granted on authorize
+        If None is specified by default linkedin uses the r_basicprofile scope
+        e.g. api.request_token(['rw_nus', 'r_fullprofile'])
         """
         self.clear()
 
         method = "GET"
         relative_url = "/uas/oauth/requestToken"
-        
-        query_dict = self._query_dict({"oauth_callback" : self._callback_url})
-        
+
+        params = {"oauth_callback": self._callback_url}
+
+        if scope is not None:
+            # the actual request requires a csv of scope params
+            params["scope"] = ",".join(scope)
+
+        query_dict = self._query_dict(params)
+
         self._calc_signature(self._get_url(relative_url), query_dict, self._request_token_secret, method)
 
         try:
             response = self._https_connection(method, relative_url, query_dict)
         except ConnectionError:
             return False
-        
+
         oauth_problem = self._get_value_from_raw_qs("oauth_problem", response)
         if oauth_problem:
             self._error = oauth_problem
