@@ -721,9 +721,23 @@ class LinkedIn(object):
         return isinstance(st, unicode) and st.encode("utf-8") or str(st)
 
     def _urlencode(self, query_dict):
-        keys_and_values = [(self._quote(self._utf8(k)), self._quote(self._utf8(v))) for k,v in query_dict.items()]
+        """Params to urlencode. Use key => val or key => list(val, val)"""
+        list_values = dict([(k, v) for k, v in query_dict.items() if isinstance(v, list)])
+
+        same_keys = []
+        if len(list_values) > 0:
+            for k, v in list_values.items():
+                # delete from original dict then extend later on
+                del query_dict[k]
+                same_keys = ["%s=%s" % (self._quote(self._utf8(k)), self._quote(self._utf8(vals))) for vals in v]
+
+        keys_and_values = [(self._quote(self._utf8(k)), self._quote(self._utf8(v))) for k, v in query_dict.items()]
         keys_and_values.sort()
-        return '&'.join(['%s=%s' % (k, v) for k, v in keys_and_values])
+
+        url_formatted = ['%s=%s' % (k, v) for k, v in keys_and_values]
+        url_formatted.extend(same_keys)
+
+        return '&'.join(url_formatted)
 
     def _get_value_from_raw_qs(self, key, qs):
         raw_qs = cgi.parse_qs(qs, keep_blank_values = False)
