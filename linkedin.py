@@ -655,6 +655,32 @@ class LinkedIn(object):
 
         return True
 
+    def network_updates(self, member_id=None, types=None, **parameters):
+        """
+        Api params are passed in as kwargs which need to match up with the api's keys in the docs.
+
+        @param string member_id
+        @param list types Any valid Network Update Type from the table at http://developer.linkedin.com/documents/get-network-updates-and-statistics-api
+
+        E.g.
+        api.network_updates(scope='self', types=['SHAR', 'CONN'])
+        """
+        self._check_tokens()
+
+        raw_url = "/v1/people/~/network/updates"
+
+        if member_id is not None:
+            raw_url = raw_url.replace("~", "id=%s" % member_id)
+
+        params = dict()
+
+        if types is not None:
+            params['type'] = types
+
+        params.update(parameters)
+
+        return self._do_normal_query(raw_url, params=params)
+
     def get_authorize_url(self, request_token = None):
         self._request_token = request_token and request_token or self._request_token
         if self._request_token is None:
